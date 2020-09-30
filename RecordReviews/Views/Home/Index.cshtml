@@ -1,0 +1,152 @@
+﻿@model IEnumerable<String>
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    async function creatArtistImg(element) {
+        var LastFmKey = "4a06f33fa225792783b9c7c2e6b9fde6";
+        var name = $(element).attr('alt');
+        var url = await encodeURI("https://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist=" +
+            name +
+            "&api_key=" +
+            LastFmKey +
+            "&autocorrect=1&limit=10&format=json");
+        $.getJSON(url,
+            function (json) {
+                //var i = Math.floor(Math.random() * 10) % 10;
+                var src = json.topalbums.album[1].image[3]["#text"];
+                $(element).attr("src", src);
+            });
+    }
+
+    async function creatAlbumImg(element) {
+        var LastFmKey = "4a06f33fa225792783b9c7c2e6b9fde6";
+        var artist = $(element).attr('alt');
+        var title = $(element).attr('title');
+        var url = encodeURI("https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key="
+            + LastFmKey + "&artist=" + artist + "&album=" + title + "&autocorrect=1&format=json");
+        $.getJSON(url,
+            function (json) {
+                //var i = Math.floor(Math.random() * 10) % 10;
+                var src = json.album.image[4]["#text"];
+                $(element).attr("src", src);
+            });
+    }
+</script>
+
+
+
+<script>
+    $(document).ready(async function () {
+        $(".artistImg").each(async function (index, element) {
+            await creatArtistImg(element);
+        });
+    });
+
+    $(document).ready(async function () {
+        $(".albumImg").each(async function (index, element) {
+            await creatAlbumImg(element);
+        });
+    });
+</script>
+
+
+<!--Top-10 Artists section start-->
+<section id="Top-10-Artists">
+
+    <div class="container-fluid">
+        <header class="header">
+            <div class="row top-heading mt-5">
+                <p class="top-10-title col-md-12 font-weight-bold mt-4">Top 10 Artists</p>
+            </div>
+        </header>
+
+        <div class="container">
+
+            <div class="row mt-3 mb-5 pl-5 mr-4">
+                @for (var i = 0; i < ViewBag.Top10Artists.Count; i++)
+                {
+
+                    <div class="col-md-5ths ">
+                        <div class="mb-5 mr-4 w-100">
+                            @{ var index = i + 1;}
+                            <p class="index">@index</p>
+                            <a class="img-link" asp-controller="Artists" asp-action="Details" asp-route-id="@ViewBag.Top10Artists[i].ArtistID">
+                                <img class="artistImg rounded-circle z-depth-2 w-100 shadow mb-2" alt="@ViewBag.Top10Artists[i].ArtistName" src=""
+                                     data-holder-rendered="true">
+                            </a>
+                            <a class="font-weight-bold text-decoration-none text-dark" asp-controller="Artists" asp-action="Details" asp-route-id="@ViewBag.Top10Artists[i].ArtistID">@ViewBag.Top10Artists[i].ArtistName</a><br />
+                            <a class="rate-link min-font-muted text-muted" href=""><span>Rated @ViewBag.Top10Artists[i].AvgRate</span></a>
+                        </div>
+                    </div>
+
+                }
+            </div>
+        </div>
+    </div>
+</section>
+<!--Top-10 Artists section end-->
+<!--Top-10 Albums section start-->
+<section id="Top-10-Albums">
+
+    <div class="container-fluid">
+        <header class="header">
+            <div class="row top-heading mt-5">
+                <p class="top-10-title col-md-12 font-weight-bold mt-4">Top 10 Albums</p>
+            </div>
+        </header>
+
+        <div class="container">
+
+            <div class="row mt-3 mb-5 pl-5 mr-4">
+                @for (var i = 0; i < ViewBag.Top10Albums.Count; i++)
+                {
+                    <div class="col-md-5ths">
+                        <div class="mb-5 mr-4 w-100">
+                            @{ var index = i + 1;}
+                            <p class="index">@index</p>
+                            <a class="img-link" asp-controller="Albums" asp-action="Details" asp-route-id="@ViewBag.Top10Albums[i].AlbumId">
+                                <img class="albumImg w-100 mb-2 shadow" alt="@ViewBag.Top10Albums[i].ArtistName" title="@ViewBag.Top10Albums[i].AlbumTitle" src=""
+                                     data-holder-rendered="true">
+                            </a>
+                            <a class="font-weight-bold text-decoration-none text-dark" asp-controller="Albums" asp-action="Details" asp-route-id="@ViewBag.Top10Albums[i].AlbumId">@ViewBag.Top10Albums[i].AlbumTitle</a><br />
+                            <a class="min-font-muted font-weight-bold text-muted" asp-controller="Artists" asp-action="Details" asp-route-id="@ViewBag.Top10Albums[i].ArtistId">@ViewBag.Top10Albums[i].ArtistName</a><br />
+                            <a class="rate-link min-font-muted text-muted" href=""><span>Rated @ViewBag.Top10Albums[i].AvgRate</span></a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+<!--Top-10 Albums section end-->
+<!--Top-10 Users section start-->
+<section id="Top-10-Users">
+
+    <div class="container-fluid">
+        <header class="header">
+            <div class="row top-heading mt-5">
+                <p class="top-10-title col-md-12 font-weight-bold mt-4">Top 10 Users</p>
+            </div>
+        </header>
+
+        <div class="container pl-5">
+            <div class="row mt-3 mb-5 pl-5 mr-4">
+                @for (var i = 0; i < ViewBag.Top10Users.Count; i++)
+                {
+                    <div class="col-md-5ths">
+                        <div class="mb-5 mr-4 w-100">
+                            @{ var index = i + 1;}
+                            <p class="index">@index</p>
+                            <a class="font-weight-bold text-decoration-none text-dark">@ViewBag.Top10Users[i].UserName</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<!--Top-10 Users section end-->

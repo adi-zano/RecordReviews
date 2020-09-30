@@ -1,0 +1,204 @@
+﻿@model object
+
+@{
+    ViewBag.Title = "Trends";
+    Layout = "_Layout";
+}
+<!--script for img(last.fm) start-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    async function creatAlbumImg(element) {
+        var LastFmKey = "4a06f33fa225792783b9c7c2e6b9fde6";
+        var artist = $(element).attr('alt');
+        var title = $(element).attr('title');
+        var url = encodeURI("https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key="
+            + LastFmKey + "&artist=" + artist + "&album=" + title + "&autocorrect=1&format=json");
+        $.getJSON(url,
+            function (json) {
+                //var i = Math.floor(Math.random() * 10) % 10;
+                var src = json.album.image[4]["#text"];
+                $(element).attr("src", src);
+            });
+    }
+</script>
+<!--script for img(last.fm) end-->
+<!--script for graphs(d3.js) start-->
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script>
+    function creatPieChart(data) {
+        console.log(data);
+        var svg = d3.select("#reviews-genre-graph")
+            .append("svg")
+            .attr("width", 500)
+            .attr("height", 500)
+
+        var width = svg.attr("width");
+        var height = svg.attr("height");
+        var radius = Math.min(width - 120, height - 120) / 2;
+
+        var g = svg.append("g")
+            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+
+        var color = d3.scaleOrdinal(['#ff99c8', '#fcf6bd', '#d0f4de', '#a9def9', '#e4c1f9']);
+        //var color = d3.scaleOrdinal()
+        //    .domain(data)
+        //    .range(d3.schemeSet2);
+
+        var pie = d3.pie().value(function (d) {
+            return d.count;
+        });
+
+        var path = d3.arc()
+            .outerRadius(radius - 10)
+            .innerRadius(0);
+
+        var label = d3.arc()
+            .outerRadius(radius)
+            .innerRadius(radius - 80);
+
+        var arc = g.selectAll(".arc")
+            .data(pie(data))
+            .enter().append("g")
+            .attr("class", "arc");
+
+        arc.append("path")
+            .attr("d", path)
+            .attr("fill", function (d) { return color(d.data.genre); });
+
+        console.log(arc)
+
+        arc.append("text")
+            .attr("transform", function (d) {
+                var c = label.centroid(d);
+                return "translate(" + c[0] * 1.45 + "," + c[1] * 1.45 + ")";
+            })
+            .text(function (d) { return d.data.genre; });
+
+
+    }
+
+</script>
+
+<script>
+    function createBarChart(data) {
+
+        var svg = d3.select("#reviews-month-graph")
+            .append("svg")
+            .attr("width", 1000)
+            .attr("height", 500)
+
+        var margin = 200;
+        var width = svg.attr("width") - margin;
+        var height = svg.attr("height") - margin;
+
+        var xScale = d3.scaleBand().range([0, width]).padding(0.3),
+            yScale = d3.scaleLinear().range([height, 0]);
+
+        var g = svg.append("g")
+            .attr("transform", "translate(" + 100 + "," + 100 + ")");
+
+        xScale.domain(data.map(function (d) { return d.month; }));
+        yScale.domain([0, d3.max(data, function (d) { return d.count; })]);
+
+        g.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(xScale))
+            .append("text")
+            .attr("y", height - 250)
+            .attr("x", width)
+            .attr("text-anchor", "end")
+            .attr("stroke", "black")
+            .text("Month");
+
+        g.append("g")
+            .call(d3.axisLeft(yScale).tickFormat(function (d) {
+                return d;
+            })
+                .ticks(10))
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 6)
+            .attr("dy", "-5.1em")
+            .attr("text-anchor", "end")
+            .attr("stroke", "black")
+            .text("Number Of Reviews");
+
+        g.selectAll(".bar")
+            .data(data)
+            .enter().append("rect")
+            .attr("class", "bar")
+            .attr("x", function (d) { return xScale(d.month); })
+            .attr("y", function (d) { return yScale(d.count); })
+            .attr("width", xScale.bandwidth())
+            .attr("height", function (d) { return height - yScale(d.count); });
+    }
+</script>
+<!--script for graphs(d3.js) end-->
+
+<script>
+    $(document).ready(async function () {
+        $("img").each(async function (index, element) {
+            await creatAlbumImg(element);
+
+        });
+
+        var dataPie=@Html.Raw(Json.Serialize(ViewBag.GenreStatistic));
+        creatPieChart(dataPie);
+
+        var dataBar = @Html.Raw(Json.Serialize(ViewBag.ReviewStatistic));
+        createBarChart(dataBar);
+    });
+</script>
+
+
+<div class="container-fluid">
+    <header class="header">
+        <div class="row top-heading mt-5">
+            <p class="col-md-12 font-weight-bold">Trends</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="row top-heading mt-5">
+                    <h2 class="font-weight-bold w-100">Most Reviewed Genre is :</h2>
+                </div>
+                <a class="row most-reviewed-genre-link font-weight-bold text-muted w-100 text-center"><span>@ViewBag.MostReviewedGenreName</span></a>
+
+                <div class="row mt-4">
+                    <h5 class="font-weight-bold w-100 mb-3">Top Rated @ViewBag.MostReviewedGenreName Album</h5>
+                    @for (var i = 0; i < 4; i++)
+                    {
+                        <div class="row col-md-5">
+                            <div class="mb-2 mr-4 w-100">
+                                <a class="img-link" asp-controller="Albums" asp-action="Details" asp-route-id="@ViewBag.MostReviewedGenreAlbums[i].AlbumId">
+                                    <img class="albumImg w-100 mb-2 shadow" alt="@ViewBag.MostReviewedGenreAlbums[i].ArtistName" title="@ViewBag.MostReviewedGenreAlbums[i].AlbumTitle" src=""
+                                         data-holder-rendered="true">
+                                </a>
+                                <a class="font-weight-bold text-decoration-none text-dark" asp-controller="Albums" asp-action="Details" asp-route-id="@ViewBag.MostReviewedGenreAlbums[i].AlbumId">@ViewBag.MostReviewedGenreAlbums[i].AlbumTitle</a><br />
+                                <a class="min-font-muted font-weight-bold text-muted" asp-controller="Artists" asp-action="Details" asp-route-id="@ViewBag.MostReviewedGenreAlbums[i].ArtistId">@ViewBag.MostReviewedGenreAlbums[i].ArtistName</a><br />
+                                <a class="rate-link min-font-muted text-muted" href=""><span>Rated @ViewBag.MostReviewedGenreAlbums[i].AvgRate</span></a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="row top-heading mt-5">
+                    <h2 class="font-weight-bold w-100">Number Of Reviews per Genre</h2>
+                </div>
+                <div class="row mt-5" id="reviews-genre-graph"></div>
+            </div>
+        </div>
+
+        <div class="row">
+            <h2 class="top-heading mt-5 font-weight-bold w-100 text-center">Number Of Reviews per Month</h2>
+            <div class="mx-auto" id="reviews-month-graph"></div>
+        </div>
+
+    </div>
+</div>

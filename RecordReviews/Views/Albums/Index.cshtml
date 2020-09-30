@@ -1,0 +1,159 @@
+﻿@model IEnumerable<RecordReviews.Models.Album>
+
+@{
+    ViewData["Title"] = "Albums";
+}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+        async function creatAlbumImg(element) {
+            var LastFmKey = "4a06f33fa225792783b9c7c2e6b9fde6";
+            var artist = $(element).attr('alt');
+            var title = $(element).attr('title');
+            var url = encodeURI("https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key="
+                + LastFmKey + "&artist=" + artist + "&album=" + title + "&autocorrect=1&format=json");
+            $.getJSON(url,
+                function (json) {
+                    //var i = Math.floor(Math.random() * 10) % 10;
+                    var src = json.album.image[4]["#text"];
+                    $(element).attr("src", src);
+                });
+        }
+</script>
+<script>
+        $(document).ready(async function () {
+            $("img").each(async function (index, element) {
+                await creatAlbumImg(element);
+            });
+        });
+</script>
+
+<div class="container-fluid">
+    <header class="header">
+        <div class="row top-heading mt-5">
+            <p class="col-md-12 font-weight-bold">Albums</p>
+        </div>
+    </header>
+
+
+    <div class="container">
+        <p>
+            <a class="text-dark" asp-action="Create">Create New</a>
+        </p>
+
+
+        <form class="row form-inline d-flex md-form form-sm mt-0" asp-controller="Albums" asp-action="Index">
+            <button type="submit" class="fabutton pl-3"><i class="fa fa-search" aria-hidden="true"></i></button>
+            <input class="col-md-11 form-control form-control-sm ml-3 w-75" type="text" name="searchString" placeholder="Search by Album Title"
+                   aria-label="Search">
+        </form>
+
+        <div class="row mt-5 mb-5">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-3">
+                    <div class="mb-5 mr-4">
+                        <a class="img-link" asp-controller="Albums" asp-action="Details" asp-route-id="@item.AlbumId">
+                            <img class="w-100 mb-2 shadow" alt="@item.ArtistName" title="@item.AlbumTitle" src=""
+                                 data-holder-rendered="true">
+                        </a>
+                        <a class="font-weight-bold text-decoration-none text-dark" asp-controller="Albums" asp-action="Details" asp-route-id="@item.AlbumId">@item.AlbumTitle</a><br />
+                        <a class="min-font-muted font-weight-bold text-muted" asp-controller="Artists" asp-action="Details" asp-route-id="@item.ArtistId">@item.ArtistName</a><br />
+                        <a class="rate-link min-font-muted text-muted" href=""><span>Rated @item.AvgRate</span></a>
+                        <div>
+                            @if ((await AuthorizationService.AuthorizeAsync(
+                                  User, item,
+                                  Operations.Update)).Succeeded)
+                            {
+                                <a class="min-font-muted text-muted" asp-action="Edit" asp-route-id="@item.AlbumId">Edit</a>
+                                <text> | </text>
+                            }
+
+                            @if ((await AuthorizationService.AuthorizeAsync(
+                                 User, item,
+                                 Operations.Delete)).Succeeded)
+                            {
+                                <a class="min-font-muted text-muted" asp-action="Delete" asp-route-id="@item.AlbumId">Delete</a>
+                            }
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+@*<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.AlbumTitle)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ArtistName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ReleaseDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Genre)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Artist)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.AvgRate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PageViews)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.AlbumTitle)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ArtistName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ReleaseDate)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Genre)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Artist.ArtistName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.AvgRate)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.PageViews)
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.AlbumId">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.AlbumId">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.AlbumId">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>*@

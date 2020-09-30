@@ -1,0 +1,183 @@
+﻿@model IEnumerable<RecordReviews.Models.Review>
+
+@{
+    ViewData["Title"] = "Reviews";
+    //TempData["searchString"] = "Sia";
+}
+@using System.Globalization
+
+<!--scripts for img(last.fm) start-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    async function creatArtistImg(element) {
+        var LastFmKey = "4a06f33fa225792783b9c7c2e6b9fde6";
+        var name = $(element).attr('alt');
+        var url = await encodeURI("https://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist=" +
+            name +
+            "&api_key=" +
+            LastFmKey +
+            "&autocorrect=1&limit=10&format=json");
+        $.getJSON(url,
+            function (json) {
+                //var i = Math.floor(Math.random() * 10) % 10;
+                var src = json.topalbums.album[1].image[3]["#text"];
+                $(element).attr("src", src);
+            });
+    }
+</script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    async function creatAlbumImg(element) {
+        var LastFmKey = "4a06f33fa225792783b9c7c2e6b9fde6";
+        var artist = $(element).attr('alt');
+        var title = $(element).attr('title');
+        var url = encodeURI("https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key="
+            + LastFmKey + "&artist=" + artist + "&album=" + title + "&autocorrect=1&format=json");
+        $.getJSON(url,
+            function (json) {
+                //var i = Math.floor(Math.random() * 10) % 10;
+                var src = json.album.image[4]["#text"];
+                $(element).attr("src", src);
+            });
+    }
+</script>
+<script>
+    $(document).ready(async function () {
+        $(".albumImg").each(async function (index, element) {
+            await creatAlbumImg(element);
+        });
+        await creatArtistImg(".artistImg");
+    });
+</script>
+<!--scripts for img(last.fm) end-->
+<!--last reviews section start-->
+<div class="container-fluid">
+    <div class="container">
+        <header class="header">
+            <div class="row top-heading mt-5">
+                @if ((string)TempData["searchString"] != null)
+                {
+                    <p id="title" class="col-md-12 font-weight-bold">Reviews Written About @TempData["searchString"] </p>
+                }
+                else
+                {
+                    <p id="title" class="col-md-12 font-weight-bold">Last 10 Reviews </p>
+                }
+                @*<p id="title" class="col-md-12 font-weight-bold">Last 10 Reviews </p>*@
+            </div>
+        </header>
+
+        <p>
+            <a class="text-dark" asp-action="Create">Create New</a>
+        </p>
+
+        <form class="row form-inline d-flex md-form form-sm mb-4" asp-controller="Reviews" asp-action="Index">
+            <button type="submit" class="fabutton pl-3"><i class="fa fa-search" aria-hidden="true"></i></button>
+            <input class="col-md-11 form-control form-control-sm ml-3 w-75" type="text" name="searchString" placeholder="Search by Artist's Name"
+                   aria-label="Search">
+        </form>
+        <div class="table-responsive-md">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">
+                            @Html.DisplayNameFor(model => model.Album)
+                        </th>
+                        <th scope="col">
+                            @Html.DisplayNameFor(model => model.Comment)
+                        </th>
+                        <th scope="col">
+                            @Html.DisplayNameFor(model => model.Rate)
+                        </th>
+                        <th scope="col">
+                            @Html.DisplayNameFor(model => model.CreationTime)
+                        </th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < 10; i++)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => Model.ElementAt(i).Album.AlbumTitle)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => Model.ElementAt(i).Comment)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => Model.ElementAt(i).Rate)
+                            </td>
+                            <td>
+                                @{
+                                    var time = Model.ElementAt(i).CreationTime.ToString("g", CultureInfo.CreateSpecificCulture("es-ES"));
+                                }
+                                @Html.DisplayFor(modelItem => time)
+                            </td>
+                            <td>
+                                @if ((await AuthorizationService.AuthorizeAsync(
+                                   User, Model.ElementAt(i),
+                                   Operations.Update)).Succeeded)
+                                {
+                                    <a class="text-muted" asp-action="Edit" asp-route-id="@Model.ElementAt(i).ReviewId">Edit</a>
+                                    <text> | </text>
+                                }
+
+                                <a class="text-muted" asp-action="Details" asp-route-id="@Model.ElementAt(i).ReviewId">Details</a>
+
+                                @if ((await AuthorizationService.AuthorizeAsync(
+                                   User, Model.ElementAt(i),
+                                   Operations.Delete)).Succeeded)
+                                {
+                                    <text> | </text>
+                                    <a class="text-muted" asp-action="Delete" asp-route-id="@Model.ElementAt(i).ReviewId">Delete</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!--last reviews section end-->
+<!--most reviewed section start-->
+<section class="most-reviewed">
+    <div class="container-fluid">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="row top-heading mt-5">
+                        <h2 class="font-weight-bold w-100 text-center">Most Reviewed Artist</h2>
+                    </div>
+                    <div class="my-2 w-100 text-center">
+                        <a asp-controller="Artists" asp-action="Details" asp-route-id="@ViewBag.MostReviewedArtist.ArtistID">
+                            <img class="img-link artistImg rounded-circle z-depth-2 shadow rounded mx-auto d-block" alt="@ViewBag.MostReviewedArtist.ArtistName" src=""
+                                 data-holder-rendered="true">
+                        </a><br />
+                        <a class="font-weight-bold text-decoration-none text-dark" asp-controller="Artists" asp-action="Details" asp-route-id="@ViewBag.MostReviewedArtist.ArtistID">@ViewBag.MostReviewedArtist.ArtistName</a><br />
+                        <a class="rate-link min-font-muted text-muted" href=""><span>Rated @ViewBag.MostReviewedArtist.AvgRate</span></a>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="row top-heading mt-5">
+                        <h2 class="font-weight-bold w-100 text-center">Most Reviewed Album</h2>
+                    </div>
+                    <div class="my-2 w-100 text-center">
+                        <a asp-controller="Albums" asp-action="Details" asp-route-id="@ViewBag.MostReviewedAlbum.AlbumId">
+                            <img class="img-link albumImg mb-2 shadow rounded mx-auto d-block" alt="@ViewBag.MostReviewedAlbum.ArtistName" title="@ViewBag.MostReviewedAlbum.AlbumTitle" src=""
+                                 data-holder-rendered="true">
+                        </a><br />
+                        <a class="font-weight-bold text-decoration-none text-dark" asp-controller="Albums" asp-action="Details" asp-route-id="@ViewBag.MostReviewedAlbum.AlbumId">@ViewBag.MostReviewedAlbum.AlbumTitle</a><br />
+                        <a class="min-font-muted font-weight-bold text-muted" asp-controller="Artists" asp-action="Details" asp-route-id="@ViewBag.MostReviewedAlbum.ArtistId">@ViewBag.MostReviewedAlbum.ArtistName</a><br />
+                        <a class="rate-link min-font-muted text-muted" href=""><span>Rated @ViewBag.MostReviewedAlbum.AvgRate</span></a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!--most reviewed section end-->
